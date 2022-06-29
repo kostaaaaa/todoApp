@@ -6,9 +6,10 @@ class TaskAdmin(admin.ModelAdmin):
     list_display = (
         'description',
         'status',
-        'todo_until',
+        'expired_at',
+        'user',
     )
-    readonly_fields = ('user', 'created_at',)
+    readonly_fields = ('created_at',)
 
 
 admin.site.register(Task, TaskAdmin)

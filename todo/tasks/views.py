@@ -1,3 +1,4 @@
+from datetime import datetime
 from rest_framework import generics
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -11,8 +12,9 @@ class TaskViewSet(generics.ListCreateAPIView):
     filterset_fields = ('status',)
 
     def get_queryset(self):
+        now = datetime.now()
         user = self.request.user
-        return Task.objects.filter(user=user).order_by('todo_until')
+        return Task.objects.filter(user=user, expired_at__gte=now)
 
 
 class TaskDetailViewSet(generics.RetrieveUpdateDestroyAPIView):

@@ -14,7 +14,7 @@ class Task(models.Model):
     status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='TO_DO')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
     created_at = models.DateTimeField(auto_now_add=True)
-    todo_until = models.DateTimeField()
+    expired_at = models.DateTimeField()
 
     def __str__(self):
         return f'{self.description}, {self.status}'
