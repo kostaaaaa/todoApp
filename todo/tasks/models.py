@@ -17,4 +17,4 @@ class Task(models.Model):
     todo_until = models.DateTimeField()
 
     def __str__(self):
-        return self.description, self.status, self.todo_until
+        return f'{self.description}, {self.status}'
