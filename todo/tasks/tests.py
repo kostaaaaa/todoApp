@@ -11,7 +11,7 @@ from tasks.models import Task
 DEFAULT_ROUTE = '/api/tasks/'
 
 
-class APITest(APITestCase):
+class TaskApiTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create(username='test')
         self.client = APIClient()
