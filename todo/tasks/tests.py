@@ -1,51 +1,57 @@
-import unittest
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
+from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from datetime import datetime, timedelta
 
-class APITest(unittest.TestCase):
+from tasks.models import Task
+
+
+DEFAULT_ROUTE = '/api/tasks/'
+
+
+class APITest(APITestCase):
     def setUp(self):
-        user = User.objects.all().first()
-        client = APIClient()
-        token = RefreshToken.for_user(user)
-        client.credentials(HTTP_AUTHORIZATION=f'Bearer {token.access_token}')
-        self.client = client
-
+        self.user = User.objects.create(username='test')
+        self.client = APIClient()
+        token = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token.access_token}')
+        self.task = Task.objects.create(
+            description = 'wash hands',
+            expired_at = datetime.now() + timedelta(days=1),
+            user = self.user,
+            )
 
     def test_get_tasks(self):
-        response = self.client.get('/api/tasks-list/')
-        self.assertEqual(response.status_code, 200)
-
+        response = self.client.get(DEFAULT_ROUTE)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_task(self):
+        tasks_count_before = Task.objects.count()
         data = {
             'description': 'wash hands',
-            'expired_at': '2022-08-19T11:46:53.362Z',
-            'user': 1,
+            'expired_at': datetime.now() + timedelta(days=1),
+            'user': self.user.id,
         }
-        response = self.client.post('/api/tasks-list/', data)
-        self.assertEqual(response.status_code, 201)
-
+        response = self.client.post(DEFAULT_ROUTE, data)
+        tasks_count_after = Task.objects.count()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(tasks_count_before, tasks_count_after - 1)
 
     def test_put_task(self):
-        tasks = self.client.get('/api/tasks-list/')
-        content = tasks.data[0].items()
-        id = list(content)[0][1]
-        
         data = {
             'description': 'updated task',
-            'expired_at': '2022-08-19T11:46:53.362Z',
-            'user': 1,
+            'expired_at': datetime.now() + timedelta(days=1),
+            'user': self.user.id,
         }
-        response = self.client.put(f'/api/tasks-list/{id}/', data)
-        self.assertEqual(response.status_code, 200)
+        response = self.client.put(DEFAULT_ROUTE + f'{self.task.id}/', data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['description'], data['description'])
 
-
-    def test_remove_task(self):
-        get_task = self.client.get('/api/tasks-list/')
-        data = get_task.data[0].items()
-        id = list(data)[0][1]
-
-        response = self.client.delete(f'/api/tasks-list/{id}/')
-        self.assertEqual(response.status_code, 204)
+    def test_delete_task(self):
+        tasks_count_before = Task.objects.count()
+        response = self.client.delete(DEFAULT_ROUTE + f'{self.task.id}/')
+        tasks_count_after = Task.objects.count()
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(tasks_count_before, tasks_count_after + 1)
